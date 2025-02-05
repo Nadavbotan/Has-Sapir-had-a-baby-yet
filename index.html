@@ -24,6 +24,8 @@
             box-shadow: 0 15px 25px rgba(0,0,0,0.1);
             max-width: 400px;
             width: 100%;
+            position: relative;
+            z-index: 1;
         }
         #time {
             color: white;
@@ -52,6 +54,94 @@
             margin-top: 15px;
             opacity: 0.7;
         }
+        .subscribe-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 1em;
+            margin-top: 20px;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+        }
+        .subscribe-btn:hover {
+            transform: translateY(-2px);
+            background: #ff5252;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 400px;
+            position: relative;
+            text-align: center;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .close-btn {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #666;
+        }
+        .email-input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+        .submit-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+        .submit-btn:hover {
+            background: #45a049;
+        }
+        .success-message {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        .success-text {
+            color: #4CAF50;
+            font-size: 1.4em;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        .success-emoji {
+            font-size: 2em;
+            margin-top: 10px;
+        }
         @keyframes pulse {
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.05); }
@@ -62,14 +152,13 @@
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: -1;
+            z-index: 0;
             overflow: hidden;
         }
         .bubble {
             position: absolute;
             background: rgba(255,255,255,0.1);
             border-radius: 50%;
-            animation: float linear infinite;
         }
     </style>
 </head>
@@ -77,22 +166,76 @@
     <div class="background-bubbles"></div>
     <div class="container">
         <div id="time"></div>
-        <div id="birth-status">Has Sapir given birth yet?</div>
+        <div id="birth-status">Is Sapir given birth yet?</div>
         <div id="birth-status-answer">Not Yet</div>
-        <div id="update-note">Don't worry - This will be updated live</div>
+        <div id="update-note">This will be updated live</div>
+        <button class="subscribe-btn">Subscribe for Updates</button>
+    </div>
+
+    <div class="modal" id="subscribeModal">
+        <div class="modal-content">
+            <button class="close-btn">&times;</button>
+            <div id="subscribeFormContainer">
+                <h2>Subscribe for Updates</h2>
+                <p>Enter your email to receive updates about Sapir's birth status:</p>
+                <form id="subscribeForm">
+                    <input type="email" class="email-input" placeholder="Enter your email" required>
+                    <button type="submit" class="submit-btn">Subscribe</button>
+                </form>
+            </div>
+            <div class="success-message">
+                <div class="success-text">We'll let you know when she pops!</div>
+                <div class="success-emoji">👶🎉</div>
+            </div>
+        </div>
     </div>
 
     <script>
         function updateTime() {
-            const israelTime = new Date().toLocaleString('en-US', { 
-                timeZone: 'Asia/Jerusalem', 
-                dateStyle: 'full', 
-                timeStyle: 'long' 
+            const israelTime = new Date().toLocaleString('en-US', {
+                timeZone: 'Asia/Jerusalem',
+                dateStyle: 'full',
+                timeStyle: 'long'
             });
             document.getElementById('time').textContent = israelTime;
         }
 
-        // Create bubbles
+        updateTime();
+        setInterval(updateTime, 1000);
+
+        const modal = document.getElementById('subscribeModal');
+        const subscribeBtn = document.querySelector('.subscribe-btn');
+        const closeBtn = document.querySelector('.close-btn');
+        const formContainer = document.getElementById('subscribeFormContainer');
+        const successMessage = document.querySelector('.success-message');
+        const subscribeForm = document.getElementById('subscribeForm');
+
+        subscribeBtn.addEventListener('click', () => {
+            modal.classList.add('active');
+            formContainer.style.display = 'block';
+            successMessage.style.display = 'none';
+        });
+
+        closeBtn.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+        function closeModal() {
+            modal.classList.remove('active');
+            setTimeout(() => {
+                formContainer.style.display = 'block';
+                successMessage.style.display = 'none';
+                subscribeForm.reset();
+            }, 300);
+        }
+
+        subscribeForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            formContainer.style.display = 'none';
+            successMessage.style.display = 'block';
+        });
+
         function createBubbles() {
             const container = document.querySelector('.background-bubbles');
             for (let i = 0; i < 20; i++) {
@@ -102,35 +245,11 @@
                 bubble.style.height = bubble.style.width;
                 bubble.style.left = `${Math.random() * 100}%`;
                 bubble.style.top = `${Math.random() * 100}%`;
-                bubble.style.animationDuration = `${Math.random() * 20 + 10}s`;
-                bubble.style.animationDelay = `${Math.random() * 10}s`;
                 container.appendChild(bubble);
             }
         }
 
-        // Bubble animation
-        function animateBubbles() {
-            const bubbles = document.querySelectorAll('.bubble');
-            bubbles.forEach(bubble => {
-                bubble.animate([
-                    { transform: 'translate(0, 0)' },
-                    { transform: `translate(${(Math.random() - 0.5) * 200}px, ${(Math.random() - 0.5) * 200}px)` }
-                ], {
-                    duration: 20000,
-                    iterations: Infinity,
-                    direction: 'alternate',
-                    easing: 'ease-in-out'
-                });
-            });
-        }
-
-        // Update time immediately and then every second
-        updateTime();
-        setInterval(updateTime, 1000);
-
-        // Create and animate bubbles
         createBubbles();
-        animateBubbles();
     </script>
 </body>
 </html>
